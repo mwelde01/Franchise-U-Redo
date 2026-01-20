@@ -5,10 +5,18 @@ import shutil
 from typing import Tuple, Optional
 from pathlib import Path
 import uuid
-from pydub import AudioSegment
-from pydub.utils import mediainfo
 from fastapi import UploadFile
 from app.config import settings
+
+# Optional audio processing - gracefully degrade if not available
+try:
+    from pydub import AudioSegment
+    from pydub.utils import mediainfo
+    AUDIO_PROCESSING_AVAILABLE = True
+except ImportError:
+    AUDIO_PROCESSING_AVAILABLE = False
+    AudioSegment = None
+    mediainfo = None
 
 
 class AudioService:
@@ -87,6 +95,9 @@ class AudioService:
         Returns:
             Dictionary with audio metadata
         """
+        if not AUDIO_PROCESSING_AVAILABLE:
+            return {}  # Return empty dict if audio processing not available
+
         try:
             info = mediainfo(file_path)
             return {
@@ -139,6 +150,9 @@ class AudioService:
         Returns:
             Path to the extracted segment
         """
+        if not AUDIO_PROCESSING_AVAILABLE:
+            raise Exception("Audio processing not available (pydub/pyaudioop not installed)")
+
         try:
             audio = AudioSegment.from_file(file_path)
             segment = audio[start_time * 1000:end_time * 1000]  # pydub uses milliseconds
@@ -173,6 +187,9 @@ class AudioService:
         Returns:
             Path to converted file
         """
+        if not AUDIO_PROCESSING_AVAILABLE:
+            raise Exception("Audio processing not available (pydub/pyaudioop not installed)")
+
         if output_format not in self.SUPPORTED_FORMATS:
             raise ValueError(f"Unsupported output format: {output_format}")
 
@@ -194,6 +211,9 @@ class AudioService:
 
     def _get_audio_duration(self, file_path: str) -> float:
         """Get duration of audio file in seconds"""
+        if not AUDIO_PROCESSING_AVAILABLE:
+            return 0.0  # Return 0 if audio processing not available
+
         try:
             audio = AudioSegment.from_file(file_path)
             return len(audio) / 1000.0  # Convert milliseconds to seconds
@@ -203,7 +223,7 @@ class AudioService:
                 info = mediainfo(file_path)
                 return float(info.get('duration', 0))
             except:
-                raise Exception(f"Could not determine audio duration: {e}")
+                return 0.0  # Return 0 instead of raising error
 
     @staticmethod
     def _get_file_extension(filename: str) -> str:
@@ -228,6 +248,9 @@ class AudioService:
         Returns:
             List of amplitude values
         """
+        if not AUDIO_PROCESSING_AVAILABLE:
+            return []  # Return empty list if audio processing not available
+
         try:
             audio = AudioSegment.from_file(file_path)
 
@@ -273,6 +296,10 @@ class AudioService:
         Returns:
             True if valid audio file, False otherwise
         """
+        if not AUDIO_PROCESSING_AVAILABLE:
+            # Just check if file exists and has valid extension
+            return os.path.exists(file_path) and self._get_file_extension(os.path.basename(file_path)) in self.SUPPORTED_FORMATS
+
         try:
             AudioSegment.from_file(file_path)
             return True
