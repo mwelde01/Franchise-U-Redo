@@ -7,10 +7,10 @@ class Settings(BaseSettings):
     """Application settings from environment variables"""
 
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/podcast_db"
+    DATABASE_URL: str = "sqlite:///./podcast_db.sqlite"
 
-    # Anthropic API
-    ANTHROPIC_API_KEY: str
+    # Anthropic API (optional - AI features disabled if not set)
+    ANTHROPIC_API_KEY: str = ""
 
     # File Storage
     AUDIO_STORAGE_PATH: str = "./audio_files"
