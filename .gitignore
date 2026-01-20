@@ -20,6 +20,7 @@ htmlcov/
 
 # Database
 *.db
+*.sqlite
 *.sqlite3
 postgres_data/
 
@@ -27,6 +28,10 @@ postgres_data/
 uploads/
 audio_files/
 media/
+test_audio.mp3
+*.mp3
+*.wav
+*.m4a
 
 # IDEs
 .vscode/
