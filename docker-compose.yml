@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: podcast_db
+    environment:
+      POSTGRES_DB: podcast_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: podcast_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: podcast_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:podcast_password@postgres:5432/podcast_db
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      AUDIO_STORAGE_PATH: /app/audio_files
+      MAX_UPLOAD_SIZE: 500
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: "False"
+    ports:
+      - "8000:8000"
+    volumes:
+      - audio_files:/app/audio_files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        python -m app.init_db &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: podcast_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  audio_files:
