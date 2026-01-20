@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast Manager - Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .config { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .config input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 400px; font-size: 14px; }
+        .config button { padding: 10px 20px; background: #0ea5e9; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
+        .config button:hover { background: #0284c7; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 5px; }
+        .stat-card .value { color: #0ea5e9; font-size: 32px; font-weight: bold; }
+        .episodes { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .episode { border-bottom: 1px solid #eee; padding: 20px 0; }
+        .episode:last-child { border-bottom: none; }
+        .episode h3 { color: #333; margin-bottom: 5px; }
+        .episode .meta { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .episode .desc { color: #555; line-height: 1.6; }
+        .tags { margin-top: 10px; }
+        .tag { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-right: 8px; margin-top: 4px; }
+        .error { background: #fee; color: #c00; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .transcript { background: #f9fafb; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
+        .transcript-segment { padding: 8px; border-left: 3px solid #0ea5e9; margin-bottom: 8px; background: white; }
+        .transcript-segment .time { color: #0ea5e9; font-weight: bold; font-size: 12px; margin-right: 8px; }
+        .transcript-segment .speaker { font-weight: 600; color: #333; }
+        .search { margin-bottom: 20px; }
+        .search input { padding: 12px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 16px; }
+        .search-results { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .search-result { padding: 15px; border-left: 3px solid #0ea5e9; background: #f9fafb; margin-bottom: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Podcast Manager</h1>
+        <p class="subtitle">Browse episodes, search transcripts, and explore your podcast library</p>
+
+        <div class="config">
+            <label>API URL: </label>
+            <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://your-server:8000">
+            <button onclick="loadData()">Connect</button>
+            <button onclick="testSearch()">Test Search</button>
+        </div>
+
+        <div id="error" class="error" style="display:none;"></div>
+        <div id="loading" class="loading" style="display:none;">Loading...</div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="search">
+            <input type="text" id="searchQuery" placeholder="Search transcripts... (e.g., 'AI', 'creativity', 'language models')" onkeypress="if(event.key==='Enter')searchTranscripts()">
+        </div>
+
+        <div id="searchResults" class="search-results" style="display:none;"></div>
+
+        <div class="episodes" id="episodes"></div>
+    </div>
+
+    <script>
+        let API_URL = 'http://localhost:8000';
+
+        async function loadData() {
+            API_URL = document.getElementById('apiUrl').value;
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                // Load stats
+                const statsRes = await fetch(`${API_URL}/stats`);
+                const stats = await statsRes.json();
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card"><h3>Podcasts</h3><div class="value">${stats.podcasts}</div></div>
+                    <div class="stat-card"><h3>Episodes</h3><div class="value">${stats.episodes}</div></div>
+                    <div class="stat-card"><h3>Tags</h3><div class="value">${stats.tags}</div></div>
+                    <div class="stat-card"><h3>Transcript Segments</h3><div class="value">${stats.transcript_segments}</div></div>
+                `;
+
+                // Load episodes
+                const episodesRes = await fetch(`${API_URL}/episodes/`);
+                const episodes = await episodesRes.json();
+
+                if (episodes.length === 0) {
+                    document.getElementById('episodes').innerHTML = '<p style="text-align:center;color:#666;padding:40px;">No episodes yet. Upload one using the API!</p>';
+                } else {
+                    document.getElementById('episodes').innerHTML = episodes.map(ep => `
+                        <div class="episode">
+                            <h3>${ep.title}</h3>
+                            <div class="meta">${ep.podcast_name || 'Unknown Podcast'} • Episode ${ep.episode_number || '?'} • ${formatDuration(ep.duration)}</div>
+                            <div class="desc">${ep.summary || ep.description || 'No description available'}</div>
+                            <div class="tags">${ep.tags.map(t => `<span class="tag">${t.name}</span>`).join('')}</div>
+                            <button onclick="loadTranscript(${ep.id})" style="margin-top:10px;padding:8px 16px;background:#0ea5e9;color:white;border:none;border-radius:4px;cursor:pointer;">View Transcript</button>
+                            <div id="transcript-${ep.id}" class="transcript" style="display:none;"></div>
+                        </div>
+                    `).join('');
+                }
+
+                document.getElementById('loading').style.display = 'none';
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error: ${err.message}. Make sure the API URL is correct and accessible.`;
+            }
+        }
+
+        async function loadTranscript(episodeId) {
+            const container = document.getElementById(`transcript-${episodeId}`);
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/episodes/${episodeId}?include_transcript=true`);
+                const data = await res.json();
+
+                if (!data.transcript_segments || data.transcript_segments.length === 0) {
+                    container.innerHTML = '<p>No transcript available</p>';
+                } else {
+                    container.innerHTML = data.transcript_segments.map(seg => `
+                        <div class="transcript-segment">
+                            <span class="time">${formatTime(seg.start_time)}</span>
+                            ${seg.speaker ? `<span class="speaker">${seg.speaker}:</span>` : ''}
+                            ${seg.text}
+                        </div>
+                    `).join('');
+                }
+                container.style.display = 'block';
+            } catch (err) {
+                container.innerHTML = `<p style="color:#c00;">Error loading transcript: ${err.message}</p>`;
+                container.style.display = 'block';
+            }
+        }
+
+        async function searchTranscripts() {
+            const query = document.getElementById('searchQuery').value;
+            if (!query) return;
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/search/transcripts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, limit: 20 })
+                });
+                const data = await res.json();
+
+                if (data.results.length === 0) {
+                    resultsDiv.innerHTML = '<p style="text-align:center;padding:20px;color:#666;">No results found</p>';
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3 style="margin-bottom:15px;">Found ${data.total_count} results for "${query}"</h3>
+                        ${data.results.map(r => `
+                            <div class="search-result">
+                                <div style="font-weight:600;margin-bottom:5px;">${r.episode_title}</div>
+                                <div style="font-size:12px;color:#666;margin-bottom:8px;">
+                                    ${r.podcast_name} • ${formatTime(r.start_time)} • ${r.speaker || 'Unknown'}
+                                </div>
+                                <div>${highlightQuery(r.text, query)}</div>
+                            </div>
+                        `).join('')}
+                    `;
+                }
+            } catch (err) {
+                resultsDiv.innerHTML = `<p style="color:#c00;">Error: ${err.message}</p>`;
+            }
+        }
+
+        function testSearch() {
+            document.getElementById('searchQuery').value = 'AI';
+            searchTranscripts();
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return 'Unknown';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function highlightQuery(text, query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark style="background:#fef08a;padding:2px 4px;">$1</mark>');
+        }
+
+        // Auto-load on page load
+        window.onload = () => loadData();
+    </script>
+</body>
+</html>
