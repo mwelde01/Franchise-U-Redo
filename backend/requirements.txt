@@ -1,15 +1,16 @@
-# FastAPI and server (using versions fully compatible with Pydantic v1)
-fastapi==0.88.0
-uvicorn==0.20.0
-python-multipart==0.0.5
+# FastAPI and server (modern versions with Python 3.14 support and pre-built wheels)
+fastapi==0.115.0
+uvicorn==0.32.0
+python-multipart==0.0.12
 
 # Database
-sqlalchemy==2.0.25
+sqlalchemy==2.0.36
 # psycopg2-binary==2.9.9  # Not needed for SQLite
-alembic==1.13.1
+alembic==1.14.0
 
-# Pydantic (v1 for Windows compatibility - no Rust compilation needed)
-pydantic==1.10.13
+# Pydantic v2 (should have pre-built wheels for Python 3.14 by now)
+pydantic==2.9.2
+pydantic-settings==2.6.1
 
 # AI/ML
 anthropic==0.18.1
