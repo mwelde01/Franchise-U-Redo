@@ -1,7 +1,25 @@
 import axios from 'axios';
 import type { Podcast, Episode, Tag, SearchResponse, ThemeDiscovery } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Dynamically construct API URL based on current host
+const getApiUrl = () => {
+  // If explicitly set, use that
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // If in browser, construct from current location
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    // Use port 8000 for backend
+    return `${protocol}//${hostname}:8000`;
+  }
+
+  // Fallback for server-side rendering
+  return 'http://localhost:8000';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL: API_URL,
@@ -33,7 +51,7 @@ export const episodeApi = {
   update: (id: number, data: Partial<Episode>) =>
     api.put<Episode>(`/episodes/${id}`, data),
   delete: (id: number) => api.delete(`/episodes/${id}`),
-  streamAudio: (id: number) => `${API_URL}/episodes/${id}/audio`,
+  streamAudio: (id: number) => `${getApiUrl()}/episodes/${id}/audio`,
   uploadTranscript: (id: number, segments: any[]) =>
     api.post(`/episodes/${id}/transcript`, { segments }),
   regenerateSummary: (id: number) =>
