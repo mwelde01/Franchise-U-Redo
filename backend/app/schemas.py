@@ -31,7 +31,7 @@ class PodcastResponse(PodcastBase):
     episode_count: Optional[int] = 0
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Tag Schemas
@@ -51,7 +51,7 @@ class TagResponse(TagBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Transcript Segment Schemas
@@ -80,7 +80,7 @@ class TranscriptSegmentResponse(TranscriptSegmentBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Episode Schemas
@@ -123,7 +123,7 @@ class EpisodeResponse(EpisodeBase):
     podcast_name: Optional[str] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class EpisodeDetailResponse(EpisodeResponse):
@@ -131,7 +131,7 @@ class EpisodeDetailResponse(EpisodeResponse):
     transcript_segments: List[TranscriptSegmentResponse] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Upload Schemas
