@@ -124,8 +124,8 @@ class TranscriptSegment(Base):
 # Indexes for common queries
 from sqlalchemy import Index
 
-# Index for searching transcript text
-Index('idx_transcript_text', TranscriptSegment.text, postgresql_using='gin', postgresql_ops={'text': 'gin_trgm_ops'})
+# Index for searching transcript text (PostgreSQL-specific, commented out for SQLite compatibility)
+# Index('idx_transcript_text', TranscriptSegment.text, postgresql_using='gin', postgresql_ops={'text': 'gin_trgm_ops'})
 
 # Index for time-based queries
 Index('idx_transcript_time', TranscriptSegment.episode_id, TranscriptSegment.start_time)
