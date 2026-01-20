@@ -1,6 +1,6 @@
 # FastAPI and server
 fastapi==0.109.0
-uvicorn[standard]==0.27.0
+uvicorn==0.27.0
 python-multipart==0.0.6
 
 # Database
@@ -8,28 +8,23 @@ sqlalchemy==2.0.25
 # psycopg2-binary==2.9.9  # Not needed for SQLite
 alembic==1.13.1
 
-# Pydantic
-pydantic==2.5.3
+# Pydantic (updated for better Windows compatibility)
+pydantic==2.10.4
 pydantic-settings==2.1.0
 
 # AI/ML
 anthropic==0.18.1
 
-# Audio processing
+# Audio processing (simplified - removed librosa which requires complex compilation)
 pydub==0.25.1
-librosa==0.10.1
-soundfile==0.12.1
 
 # File handling
 aiofiles==23.2.1
-python-magic==0.4.27
 
 # Environment
 python-dotenv==1.0.0
 
-# Utilities
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+# Utilities (simplified - removed packages requiring compilation)
 python-dateutil==2.8.2
 
 # Testing
