@@ -65,6 +65,46 @@ def get_popular_tags(
     return tags
 
 
+@router.post("/initialize-presets", response_model=dict)
+def initialize_preset_tags(db: Session = Depends(get_db)):
+    """Initialize preset tags from configuration"""
+    from app.config import settings
+
+    created_count = 0
+    skipped_count = 0
+
+    for tag_name in settings.preset_tags_list:
+        tag_name = tag_name.lower().strip()
+
+        # Check if already exists
+        existing = db.query(Tag).filter(Tag.name == tag_name).first()
+        if existing:
+            # Ensure it's marked as preset
+            if not existing.is_preset:
+                existing.is_preset = True
+                db.commit()
+            skipped_count += 1
+            continue
+
+        # Create new preset tag
+        tag = Tag(
+            name=tag_name,
+            is_preset=True,
+            usage_count=0
+        )
+        db.add(tag)
+        created_count += 1
+
+    db.commit()
+
+    return {
+        "message": "Preset tags initialized",
+        "created": created_count,
+        "skipped": skipped_count,
+        "total": len(settings.preset_tags_list)
+    }
+
+
 @router.get("/{tag_id}", response_model=TagResponse)
 def get_tag(
     tag_id: int,
@@ -206,43 +246,3 @@ def delete_tag(
     db.delete(db_tag)
     db.commit()
     return None
-
-
-@router.post("/initialize-presets", response_model=dict)
-def initialize_preset_tags(db: Session = Depends(get_db)):
-    """Initialize preset tags from configuration"""
-    from app.config import settings
-
-    created_count = 0
-    skipped_count = 0
-
-    for tag_name in settings.preset_tags_list:
-        tag_name = tag_name.lower().strip()
-
-        # Check if already exists
-        existing = db.query(Tag).filter(Tag.name == tag_name).first()
-        if existing:
-            # Ensure it's marked as preset
-            if not existing.is_preset:
-                existing.is_preset = True
-                db.commit()
-            skipped_count += 1
-            continue
-
-        # Create new preset tag
-        tag = Tag(
-            name=tag_name,
-            is_preset=True,
-            usage_count=0
-        )
-        db.add(tag)
-        created_count += 1
-
-    db.commit()
-
-    return {
-        "message": "Preset tags initialized",
-        "created": created_count,
-        "skipped": skipped_count,
-        "total": len(settings.preset_tags_list)
-    }
