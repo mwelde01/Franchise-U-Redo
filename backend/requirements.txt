@@ -1,15 +1,15 @@
 # FastAPI and server (latest versions with Python 3.14 support)
-fastapi==0.115.6
-uvicorn==0.34.0
-python-multipart==0.0.20
+fastapi>=0.115.0
+uvicorn>=0.34.0
+python-multipart>=0.0.20
 
 # Database
-sqlalchemy==2.0.36
-alembic==1.14.0
+sqlalchemy>=2.0.36
+alembic>=1.14.0
 
-# Pydantic v2 (latest with pre-built wheels for Python 3.14)
-pydantic==2.10.6
-pydantic-settings==2.7.1
+# Pydantic v2 (let pip choose version with available pre-built wheels)
+pydantic>=2.10,<3.0
+pydantic-settings>=2.7.0
 
 # AI/ML
 anthropic==0.18.1
